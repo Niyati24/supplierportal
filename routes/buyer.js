@@ -22,7 +22,11 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/list',(req,res)=>{
+
     //my bad file
+
+    //my original file come on
+
     res.status(200).send();
 })
 
