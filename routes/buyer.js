@@ -1,14 +1,18 @@
 var express = require('express');
+//var bodyParser = require('body-parser');
 var router = express.Router();
 var hbs = require('hbs');
+var _ = require('lodash');
 //const sendMail = require('./send-email2');
-//var {Requirement} = require('./../server/models/requirement');
+var {Requirement} = require('./../models/requirement');
+const {ObjectID} = require('mongodb');
+
 //var {Supplier} = require('./../server/models/supplier');
 
 
 //var {Requirement} = require('./../server/db/mongoose');
 //var {Requirement} = require('./../server/db/requirement1.js');
-
+//app.use(bodyParser.json());
 hbs.registerHelper('getCurrentYear',()=>{
     return new Date().getFullYear();
 })
@@ -21,10 +25,100 @@ router.get('/', function(req, res, next) {
    res.render('home', { title: 'Home Page',currentYear: new Date().getFullYear(), welcomeMessage: 'Welcome to Buyer Page' });
 });
 
-router.get('/list',(req,res)=>{
-    //my original file
-    res.status(200).send();
+router.post('/Add',(req,res)=>{
+   // console.log(req.body);
+   var newRequirement = new Requirement({
+    requirementName:req.body.RequirementName,
+    description:req.body.Description,
+    supplierCategory:req.body.SupplierCategory,
+    closingDate:req.body.ClosingDate}) 
+ 
+    newRequirement.save().then((doc)=>{
+        console.log(doc);
+        res.send(doc);
+    }).catch((e)=>{
+        res.status(200).send(e);
+    })
+
 })
+
+  // Get for All requirements
+    router.get('/List', (req, res) => {
+    Requirement.find().then((requirement) => {
+      res.send({requirement});
+    }, (e) => {
+      res.status(400).send(e);
+    });
+  });
+
+  
+  router.get('/Requirements/:id', (req, res) => {
+    var id = req.params.id;
+
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send();
+  }
+
+  Requirement.findById(id).then((requirement) => {
+    if (!requirement) {
+      return res.status(404).send();
+    }
+
+    res.send({requirement});
+  }).catch((e) => {
+    res.status(400).send();
+  });
+});
+
+//Delete Requirement
+
+router.delete('/Requirements/:id', (req, res) => {
+  var id = req.params.id;
+
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send();
+  }
+
+  Requirement.findByIdAndRemove(id).then((requirement) => {
+    if (!requirement) {
+      return res.status(404).send();
+    }
+
+    res.send({requirement});
+  }).catch((e) => {
+    res.status(400).send();
+  });
+});
+
+
+// Edit Requirement
+router.patch('/Requirements/:id', (req, res) => {
+  var id = req.params.id;
+  //var body = _.pick(req.body, ['requirementName', 'description','supplierCategory','closingDate']);
+  var body = _.pick(req.body, ['requirementName', 'description','supplierCategory']);
+
+  var date = req.body.closingDate;
+  //var date = data[0].date;
+  //var dateObject = new Date(date);
+  //date[0].date = dateObject
+
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send();
+  }
+
+  Requirement.findByIdAndUpdate(id, {$set: body}, {new: true}).then((requirement) => {
+    if (!requirement) {
+      return res.status(404).send();
+    }
+
+    res.send({requirement});
+  }).catch((e) => {
+    res.status(400).send();
+  })
+});
+
+
+
 
 // GET New requirement page. 
 router.get('/newreq', function(req, res) {
